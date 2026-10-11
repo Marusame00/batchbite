@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BatchBite — Per-Meal Batch Budget Calculator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+    body { background: #0f172a; color: #e2e8f0; }
+    .fade-in { animation: fadeIn 0.35s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .slide-out { animation: slideOut 0.25s ease-in forwards; }
+    @keyframes slideOut { to { opacity: 0; transform: translateX(30px) scale(0.95); } }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+    .bar-segment { transition: width 0.4s ease, opacity 0.3s; }
+    .tooltip-pop { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+      background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 6px 10px;
+      font-size: 12px; white-space: nowrap; pointer-events: none; z-index: 50; opacity: 0; transition: opacity 0.15s; }
+    .bar-segment:hover .tooltip-pop { opacity: 1; }
+    .kpi-value { transition: color 0.2s; }
+  </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+
+  <!-- ============ HEADER ============ -->
+  <header class="sticky top-0 z-40 backdrop-blur-md bg-slate-900/80 border-b border-slate-800">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+          <i data-lucide="utensils" class="w-5 h-5 text-emerald-400"></i>
+        </div>
+        <span class="text-xl font-extrabold tracking-tight text-white">Batch<span class="text-emerald-400">Bite</span></span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="loadBurgerExample()" class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition">
+          <i data-lucide="beef" class="w-4 h-4"></i> Load Example
+        </button>
+        <button onclick="resetAll()" class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 hover:text-red-300 transition">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 pt-6 pb-44">
+
+    <!-- ============ BATCH ANCHOR CARD ============ -->
+    <section class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 mb-6 fade-in">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+          <i data-lucide="anchor" class="w-4 h-4 text-emerald-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-white">Batch Anchor</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Batch Name</label>
+          <input id="batchName" type="text" placeholder="e.g. Burger Night" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Total Servings</label>
+          <input id="totalServings" type="number" min="1" value="6" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Anchor Item Name</label>
+          <input id="anchorName" type="text" placeholder="e.g. Ground Beef Patties" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Anchor Item Cost ($)</label>
+          <input id="anchorCost" type="number" min="0" step="0.01" placeholder="12.00" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ADD-ON INGREDIENTS ============ -->
+    <section class="mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+            <i data-lucide="list-plus" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <h2 class="text-lg font-bold text-white">Add-On Ingredients</h2>
+        </div>
+        <button onclick="addIngredient()" class="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 transition shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30">
+          <i data-lucide="plus" class="w-4 h-4"></i> Add Ingredient
+        </button>
+      </div>
+      <div id="ingredientList" class="space-y-3"></div>
+      <div id="emptyState" class="text-center py-10 text-slate-500">
+        <i data-lucide="package-open" class="w-10 h-10 mx-auto mb-2 opacity-40"></i>
+        <p class="text-sm">No add-on ingredients yet. Click <strong class="text-emerald-400">Add Ingredient</strong> to start.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ KPI DASHBOARD (sticky bottom) ============ -->
+  <footer id="kpiBar" class="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 shadow-2xl">
+    <div class="max-w-5xl mx-auto px-4 py-4">
+      <!-- KPI row -->
+      <div class="grid grid-cols-3 gap-4 mb-3">
+        <div class="bg-slate-800/70 rounded-xl p-3 text-center border border-slate-700/50">
+          <div class="text-[11px] uppercase tracking-wider text-slate-400 mb-0.5 flex items-center justify-center gap-1">
+            <i data-lucide="receipt" class="w-3 h-3"></i> Cost / Serving
+          </div>
+          <div id="kpiPerServing" class="text-2xl font-extrabold font-mono text-emerald-400 kpi-value">$0.00</div>
+        </div>
+        <div class="bg-slate-800/70 rounded-xl p-3 text-center border border-slate-700/50">
+          <div class="text-[11px] uppercase tracking-wider text-slate-400 mb-0.5 flex items-center justify-center gap-1">
+            <i data-lucide="sigma" class="w-3 h-3"></i> Total Batch
+          </div>
+          <div id="kpiTotalBatch" class="text-2xl font-extrabold font-mono text-white kpi-value">$0.00</div>
+        </div>
+        <div class="bg-slate-800/70 rounded-xl p-3 text-center border border-slate-700/50">
+          <div class="text-[11px] uppercase tracking-wider text-slate-400 mb-0.5 flex items-center justify-center gap-1">
+            <i data-lucide="piggy-bank" class="w-3 h-3"></i> Pantry Surplus
+          </div>
+          <div id="kpiPantrySurplus" class="text-2xl font-extrabold font-mono text-sky-400 kpi-value">$0.00</div>
+        </div>
+      </div>
+      <!-- Stacked bar -->
+      <div class="relative">
+        <div id="costBar" class="flex h-7 rounded-full overflow-hidden bg-slate-800 border border-slate-700/50"></div>
+        <div id="costLegend" class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[11px] text-slate-400"></div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============ INGREDIENT ROW TEMPLATE ============ -->
+  <template id="ingredientTpl">
+    <div class="ingredient-row fade-in bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 transition-all hover:border-slate-600">
+      <div class="flex flex-wrap items-start gap-3">
+        <!-- Name -->
+        <div class="flex-1 min-w-[140px]">
+          <label class="block text-[11px] font-medium text-slate-400 mb-1">Item Name</label>
+          <input data-field="name" type="text" placeholder="e.g. Cheddar Slices" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition" />
+        </div>
+        <!-- Price -->
+        <div class="w-28">
+          <label class="block text-[11px] font-medium text-slate-400 mb-1">Pkg Price ($)</label>
+          <input data-field="price" type="number" min="0" step="0.01" placeholder="0.00" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition" />
+        </div>
+        <!-- Allocation mode -->
+        <div class="w-40">
+          <label class="block text-[11px] font-medium text-slate-400 mb-1">Allocation</label>
+          <select data-field="mode" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition appearance-none cursor-pointer">
+            <option value="whole">Whole Package</option>
+            <option value="partial">Partial Use</option>
+          </select>
+        </div>
+        <!-- Partial fields (hidden by default) -->
+        <div data-partial class="hidden flex items-end gap-2">
+          <div class="w-24">
+            <label class="block text-[11px] font-medium text-slate-400 mb-1">Pkg Units</label>
+            <input data-field="pkgUnits" type="number" min="1" step="1" placeholder="12" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition" />
+          </div>
+          <div class="w-24">
+            <label class="block text-[11px] font-medium text-slate-400 mb-1">Used</label>
+            <input data-field="usedUnits" type="number" min="0" step="1" placeholder="6" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition" />
+          </div>
+        </div>
+        <!-- Attributed cost badge -->
+        <div class="flex flex-col items-end justify-between self-stretch pt-5">
+          <button data-delete class="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition" title="Remove ingredient">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+          <span data-attributed class="text-xs font-mono font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">$0.00</span>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    /* ===== STATE ===== */
+    let ingredients = [];
+    let idCounter = 0;
+
+    const COLORS = [
+      '#10b981','#3b82f6','#f59e0b','#ef4444','#8b5cf6',
+      '#ec4899','#14b8a6','#f97316','#6366f1','#84cc16'
+    ];
+
+    /* ===== DOM REFS ===== */
+    const $batchName = document.getElementById('batchName');
+    const $totalServings = document.getElementById('totalServings');
+    const $anchorName = document.getElementById('anchorName');
+    const $anchorCost = document.getElementById('anchorCost');
+    const $ingredientList = document.getElementById('ingredientList');
+    const $emptyState = document.getElementById('emptyState');
+    const $kpiPerServing = document.getElementById('kpiPerServing');
+    const $kpiTotalBatch = document.getElementById('kpiTotalBatch');
+    const $kpiPantrySurplus = document.getElementById('kpiPantrySurplus');
+    const $costBar = document.getElementById('costBar');
+    const $costLegend = document.getElementById('costLegend');
+    const tpl = document.getElementById('ingredientTpl');
+
+    /* ===== HELPERS ===== */
+    function fmt(n) { return '$' + (n || 0).toFixed(2); }
+
+    function getServings() {
+      const v = parseInt($totalServings.value, 10);
+      return (v && v > 0) ? v : 1;
+    }
+
+    function getAnchorCost() {
+      return parseFloat($anchorCost.value) || 0;
+    }
+
+    function getAttributedCost(ing) {
+      const price = parseFloat(ing.price) || 0;
+      if (ing.mode === 'whole') return price;
+      const pkgU = parseFloat(ing.pkgUnits) || 1;
+      const usedU = parseFloat(ing.usedUnits) || 0;
+      return (usedU / pkgU) * price;
+    }
+
+    /* ===== RECALCULATE ===== */
+    function recalculate() {
+      const anchor = getAnchorCost();
+      const servings = getServings();
+      let totalAddon = 0;
+      let pantrySurplus = 0;
+
+      const breakdown = [];
+      const anchorName = $anchorName.value || 'Anchor';
+
+      if (anchor > 0) {
+        breakdown.push({ name: anchorName, cost: anchor });
+      }
+
+      ingredients.forEach((ing) => {
+        const attr = getAttributedCost(ing);
+        const price = parseFloat(ing.price) || 0;
+        totalAddon += attr;
+        if (ing.mode === 'partial') {
+          pantrySurplus += Math.max(0, price - attr);
+        }
+        if (attr > 0) {
+          breakdown.push({ name: ing.name || 'Unnamed', cost: attr });
+        }
+        // update badge in DOM
+        const row = document.querySelector(`[data-id="${ing.id}"]`);
+        if (row) {
+          const badge = row.querySelector('[data-attributed]');
+          if (badge) badge.textContent = fmt(attr);
+        }
+      });
+
+      const totalBatch = anchor + totalAddon;
+      const perServing = totalBatch / servings;
+
+      animateValue($kpiPerServing, perServing);
+      animateValue($kpiTotalBatch, totalBatch);
+      animateValue($kpiPantrySurplus, pantrySurplus);
+
+      // Stacked bar
+      renderBar(breakdown, totalBatch);
+
+      saveState();
+    }
+
+    function animateValue(el, target) {
+      el.textContent = fmt(target);
+    }
+
+    function renderBar(breakdown, total) {
+      if (total <= 0) {
+        $costBar.innerHTML = '<div class="w-full h-full flex items-center justify-center text-[11px] text-slate-500">Add costs to see breakdown</div>';
+        $costLegend.innerHTML = '';
+        return;
+      }
+      let barHTML = '';
+      let legendHTML = '';
+      breakdown.forEach((item, i) => {
+        const pct = (item.cost / total) * 100;
+        const color = COLORS[i % COLORS.length];
+        barHTML += `<div class="bar-segment relative flex items-center justify-center text-[10px] font-semibold text-white/90" style="width:${pct}%;background:${color};min-width:${pct > 3 ? '0' : '4px'}">
+          ${pct >= 10 ? Math.round(pct) + '%' : ''}
+          <div class="tooltip-pop">${item.name}: ${fmt(item.cost)} (${pct.toFixed(1)}%)</div>
+        </div>`;
+        legendHTML += `<span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:${color}"></span>${item.name} ${Math.round(pct)}%</span>`;
+      });
+      $costBar.innerHTML = barHTML;
+      $costLegend.innerHTML = legendHTML;
+    }
+
+    /* ===== INGREDIENT MANAGEMENT ===== */
+    function addIngredient(data) {
+      const id = 'ing_' + (idCounter++);
+      const ing = {
+        id,
+        name: data?.name || '',
+        price: data?.price || '',
+        mode: data?.mode || 'whole',
+        pkgUnits: data?.pkgUnits || '',
+        usedUnits: data?.usedUnits || '',
+      };
+      ingredients.push(ing);
+      renderIngredientRow(ing);
+      updateEmptyState();
+      recalculate();
+    }
+
+    function renderIngredientRow(ing) {
+      const clone = tpl.content.cloneNode(true);
+      const row = clone.querySelector('.ingredient-row');
+      row.setAttribute('data-id', ing.id);
+
+      const nameInput = row.querySelector('[data-field="name"]');
+      const priceInput = row.querySelector('[data-field="price"]');
+      const modeSelect = row.querySelector('[data-field="mode"]');
+      const pkgUnitsInput = row.querySelector('[data-field="pkgUnits"]');
+      const usedUnitsInput = row.querySelector('[data-field="usedUnits"]');
+      const partialDiv = row.querySelector('[data-partial]');
+      const deleteBtn = row.querySelector('[data-delete]');
+
+      nameInput.value = ing.name;
+      priceInput.value = ing.price;
+      modeSelect.value = ing.mode;
+      pkgUnitsInput.value = ing.pkgUnits;
+      usedUnitsInput.value = ing.usedUnits;
+
+      if (ing.mode === 'partial') partialDiv.classList.remove('hidden');
+
+      // Event listeners
+      const sync = () => {
+        ing.name = nameInput.value;
+        ing.price = priceInput.value;
+        ing.pkgUnits = pkgUnitsInput.value;
+        ing.usedUnits = usedUnitsInput.value;
+        recalculate();
+      };
+
+      nameInput.addEventListener('input', sync);
+      priceInput.addEventListener('input', sync);
+      pkgUnitsInput.addEventListener('input', sync);
+      usedUnitsInput.addEventListener('input', sync);
+
+      modeSelect.addEventListener('change', () => {
+        ing.mode = modeSelect.value;
+        if (ing.mode === 'partial') {
+          partialDiv.classList.remove('hidden');
+        } else {
+          partialDiv.classList.add('hidden');
+        }
+        recalculate();
+      });
+
+      deleteBtn.addEventListener('click', () => {
+        row.classList.add('slide-out');
+        row.addEventListener('animationend', () => {
+          ingredients = ingredients.filter(i => i.id !== ing.id);
+          row.remove();
+          updateEmptyState();
+          recalculate();
+        });
+      });
+
+      $ingredientList.appendChild(clone);
+      lucide.createIcons({ nodes: [row] });
+    }
+
+    function updateEmptyState() {
+      $emptyState.style.display = ingredients.length === 0 ? 'block' : 'none';
+    }
+
+    /* ===== PRESETS ===== */
+    function loadBurgerExample() {
+      clearState();
+      $batchName.value = 'Burger Night';
+      $totalServings.value = '6';
+      $anchorName.value = 'Ground Beef Patties';
+      $anchorCost.value = '12.00';
+
+      addIngredient({ name: 'Brioche Buns', price: '4.50', mode: 'whole' });
+      addIngredient({ name: 'Cheddar Slices', price: '3.00', mode: 'partial', pkgUnits: '12', usedUnits: '6' });
+      addIngredient({ name: 'Burger Sauce', price: '2.50', mode: 'partial', pkgUnits: '20', usedUnits: '6' });
+      addIngredient({ name: 'Lettuce / Tomato', price: '2.00', mode: 'whole' });
+
+      recalculate();
+    }
+
+    function resetAll() {
+      clearState();
+      $batchName.value = '';
+      $totalServings.value = '6';
+      $anchorName.value = '';
+      $anchorCost.value = '';
+      recalculate();
+    }
+
+    function clearState() {
+      ingredients = [];
+      idCounter = 0;
+      $ingredientList.innerHTML = '';
+      updateEmptyState();
+    }
+
+    /* ===== LOCAL STORAGE ===== */
+    function saveState() {
+      const state = {
+        batchName: $batchName.value,
+        totalServings: $totalServings.value,
+        anchorName: $anchorName.value,
+        anchorCost: $anchorCost.value,
+        ingredients: ingredients.map(i => ({
+          name: i.name, price: i.price, mode: i.mode,
+          pkgUnits: i.pkgUnits, usedUnits: i.usedUnits,
+        })),
+      };
+      try { localStorage.setItem('batchbite_state', JSON.stringify(state)); } catch(e) {}
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem('batchbite_state');
+        if (!raw) return;
+        const state = JSON.parse(raw);
+        $batchName.value = state.batchName || '';
+        $totalServings.value = state.totalServings || '6';
+        $anchorName.value = state.anchorName || '';
+        $anchorCost.value = state.anchorCost || '';
+        (state.ingredients || []).forEach(i => addIngredient(i));
+      } catch(e) {}
+    }
+
+    /* ===== INIT ===== */
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      // Bind anchor inputs
+      [$batchName, $totalServings, $anchorName, $anchorCost].forEach(el => {
+        el.addEventListener('input', recalculate);
+      });
+      loadState();
+      recalculate();
+    });
+  </script>
+</body>
+</html>
