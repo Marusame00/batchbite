@@ -34,12 +34,18 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient());
         webView.setBackgroundColor(0xFF0F172A);
         webView.loadUrl("file:///android_asset/index.html");
-        setContentView(webView);
+
+        android.widget.FrameLayout root = new android.widget.FrameLayout(this);
+        root.setBackgroundColor(0xFF0F172A);
+        root.addView(webView, new android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT));
+        setContentView(root);
 
         // Android 15+ (targetSdk 35+) is edge-to-edge: the window extends under
         // the status bar / camera cutout. Pad the WebView by the system insets so
         // the app's header never hides behind the clock, battery or punch-hole.
-        webView.setOnApplyWindowInsetsListener((v, insets) -> {
+        root.setOnApplyWindowInsetsListener((v, insets) -> {
             int left, top, right, bottom;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 Insets bars = insets.getInsets(
