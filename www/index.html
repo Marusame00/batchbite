@@ -37,6 +37,8 @@
     .kpi-value { transition: color 0.2s; }
     .toast-hidden { opacity: 0; transform: translate(-50%, 8px); transition: opacity 0.25s, transform 0.25s; }
     .toast-visible { opacity: 1; transform: translate(-50%, 0); transition: opacity 0.25s, transform 0.25s; }
+    .tab-btn { color: #94a3b8; }
+    .tab-btn.tab-active { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
   </style>
 </head>
 <body class="min-h-screen font-sans antialiased">
@@ -59,9 +61,18 @@
         </button>
       </div>
     </div>
+    <!-- ============ TABS ============ -->
+    <nav class="max-w-5xl mx-auto w-full px-4 flex items-center gap-1.5 pb-2.5">
+      <button id="tabBtnCalculator" onclick="switchTab('calculator')" class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg transition tab-btn">
+        <i data-lucide="calculator" class="w-4 h-4"></i> Calculator
+      </button>
+      <button id="tabBtnMeals" onclick="switchTab('meals')" class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg transition tab-btn">
+        <i data-lucide="bookmark" class="w-4 h-4"></i> Saved Meals
+      </button>
+    </nav>
   </header>
 
-  <main class="max-w-5xl mx-auto px-4 pt-6 pb-44">
+  <main id="pageCalculator" class="max-w-5xl mx-auto px-4 pt-6 pb-44">
 
     <!-- ============ BATCH ANCHOR CARD ============ -->
     <section class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 mb-6 fade-in">
@@ -91,38 +102,6 @@
       </div>
     </section>
 
-    <!-- ============ SAVED MEALS (PROFILES) ============ -->
-    <section class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 mb-6 fade-in">
-      <div class="flex items-center gap-2 mb-4">
-        <div class="w-7 h-7 rounded-lg bg-sky-500/20 flex items-center justify-center">
-          <i data-lucide="bookmark" class="w-4 h-4 text-sky-400"></i>
-        </div>
-        <h2 class="text-lg font-bold text-white">Saved Meals</h2>
-        <span class="text-xs text-slate-500 ml-1">(profiles)</span>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1" for="profileName">Meal name</label>
-          <input id="profileName" type="text" placeholder="e.g. Taco Tuesday" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 transition" />
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1" for="profileSelect">Saved meals</label>
-          <select id="profileSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 transition appearance-none cursor-pointer"></select>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <button onclick="saveProfile()" class="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-900 transition shadow-lg shadow-sky-500/20">
-            <i data-lucide="save" class="w-4 h-4"></i> Save
-          </button>
-          <button onclick="loadProfile()" class="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl bg-slate-700 hover:bg-slate-600 text-white transition">
-            <i data-lucide="folder-open" class="w-4 h-4"></i> Load
-          </button>
-          <button onclick="deleteProfile()" class="p-2 rounded-xl text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition" title="Delete selected meal">
-            <i data-lucide="trash-2" class="w-4 h-4"></i>
-          </button>
-        </div>
-      </div>
-    </section>
-
     <!-- ============ ADD-ON INGREDIENTS ============ -->
     <section class="mb-6">
       <div class="flex items-center justify-between mb-4">
@@ -141,6 +120,33 @@
         <i data-lucide="package-open" class="w-10 h-10 mx-auto mb-2 opacity-40"></i>
         <p class="text-sm">No add-on ingredients yet. Click <strong class="text-emerald-400">Add Ingredient</strong> to start.</p>
       </div>
+    </section>
+  </main>
+
+  <!-- ============ SAVED MEALS PAGE (tab) ============ -->
+  <main id="pageMeals" class="max-w-5xl mx-auto px-4 pt-6 pb-44 hidden">
+    <section class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 mb-6 fade-in">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="w-7 h-7 rounded-lg bg-sky-500/20 flex items-center justify-center">
+          <i data-lucide="bookmark" class="w-4 h-4 text-sky-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-white">Saved Meals</h2>
+        <span class="text-xs text-slate-500 ml-1">(profiles)</span>
+      </div>
+
+      <div class="flex flex-wrap gap-3 items-end mb-6">
+        <div class="flex-1 min-w-[200px]">
+          <label class="block text-xs font-medium text-slate-400 mb-1" for="profileName">Save current recipe as</label>
+          <div class="flex gap-2">
+            <input id="profileName" type="text" placeholder="e.g. Taco Tuesday" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 transition" />
+            <button onclick="saveProfile()" class="shrink-0 flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-900 transition shadow-lg shadow-sky-500/20">
+              <i data-lucide="save" class="w-4 h-4"></i> Save
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="savedMealsList" class="space-y-3"></div>
     </section>
   </main>
 
@@ -418,6 +424,7 @@
 
     /* ===== PRESETS ===== */
     function loadBurgerExample() {
+      switchTab('calculator');
       clearState();
       $batchName.value = 'Burger Night';
       $totalServings.value = '6';
@@ -433,6 +440,7 @@
     }
 
     function resetAll() {
+      switchTab('calculator');
       clearState();
       $batchName.value = '';
       $totalServings.value = '6';
@@ -507,27 +515,80 @@
     }
 
     const $profileName = document.getElementById('profileName');
-    const $profileSelect = document.getElementById('profileSelect');
+    const $savedMealsList = document.getElementById('savedMealsList');
 
-    function refreshProfileSelect() {
+    function escapeHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function escapeJs(s) {
+      return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    /* ===== TABS ===== */
+    function switchTab(tab) {
+      const isCalc = tab === 'calculator';
+      document.getElementById('pageCalculator').classList.toggle('hidden', !isCalc);
+      document.getElementById('pageMeals').classList.toggle('hidden', isCalc);
+      document.getElementById('kpiBar').classList.toggle('hidden', !isCalc);
+      const calcBtn = document.getElementById('tabBtnCalculator');
+      const mealsBtn = document.getElementById('tabBtnMeals');
+      calcBtn.classList.toggle('tab-active', isCalc);
+      mealsBtn.classList.toggle('tab-active', !isCalc);
+      if (!isCalc) renderSavedMeals();
+    }
+
+    /* ===== SAVED MEALS LIST ===== */
+    function mealMeta(state) {
+      let total = parseFloat(state.anchorCost) || 0;
+      (state.ingredients || []).forEach(i => {
+        if (i.mode === 'whole') {
+          total += parseFloat(i.price) || 0;
+        } else if (i.mode === 'partial') {
+          const pkg = parseFloat(i.pkgUnits) || 0;
+          const used = parseFloat(i.usedUnits) || 0;
+          if (pkg > 0) total += ((parseFloat(i.price) || 0) * used) / pkg;
+        }
+      });
+      const servings = parseFloat(state.totalServings) || 1;
+      return {
+        total: total,
+        perServing: servings > 0 ? total / servings : 0,
+        ingCount: (state.ingredients || []).length,
+      };
+    }
+
+    function renderSavedMeals() {
       const profiles = getProfiles();
       const names = Object.keys(profiles).sort();
       const active = getActiveProfileName();
-      if ($profileSelect) {
-        $profileSelect.innerHTML = '';
-        if (names.length) {
-          names.forEach(name => {
-            const opt = document.createElement('option');
-            opt.value = name; opt.textContent = name;
-            $profileSelect.appendChild(opt);
-          });
-        } else {
-          const opt = document.createElement('option');
-          opt.value = ''; opt.textContent = '— No saved meals —';
-          $profileSelect.appendChild(opt);
-        }
-        $profileSelect.value = names.includes(active) ? active : (names[0] || '');
+      if (!names.length) {
+        $savedMealsList.innerHTML =
+          '<div class="text-center py-10 text-slate-500">'
+          + '<i data-lucide="bookmark" class="w-10 h-10 mx-auto mb-2 opacity-40"></i>'
+          + '<p class="text-sm">No saved meals yet. Build a recipe, then save it here.</p>'
+          + '</div>';
+      } else {
+        $savedMealsList.innerHTML = names.map(name => {
+          const meta = mealMeta(profiles[name]);
+          const isActive = name === active;
+          return '<div class="flex items-center justify-between gap-3 bg-slate-900/60 border border-slate-700/60 rounded-xl px-4 py-3">'
+            + '<div class="min-w-0">'
+            + '<div class="flex items-center gap-2">'
+            + '<p class="font-bold text-white truncate">' + escapeHtml(name) + '</p>'
+            + (isActive ? '<span class="text-[10px] font-semibold uppercase tracking-wide text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2 py-0.5">Active</span>' : '')
+            + '</div>'
+            + '<p class="text-xs text-slate-400 mt-0.5">≈ $' + meta.perServing.toFixed(2) + ' per serving · $' + meta.total.toFixed(2) + ' batch · ' + meta.ingCount + ' ingredient' + (meta.ingCount === 1 ? '' : 's') + '</p>'
+            + '</div>'
+            + '<div class="flex items-center gap-2 shrink-0">'
+            + '<button onclick="loadProfile(\'' + escapeJs(name) + '\')" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-900 transition">'
+            + '<i data-lucide="folder-open" class="w-3.5 h-3.5"></i> Load</button>'
+            + '<button onclick="deleteProfile(\'' + escapeJs(name) + '\', this)" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 hover:text-red-300 transition">'
+            + '<i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete</button>'
+            + '</div></div>';
+        }).join('');
       }
+      lucide.createIcons();
     }
 
     function showToast(msg, isError) {
@@ -546,12 +607,12 @@
       profiles[name] = captureState();
       saveProfiles(profiles);
       setActiveProfileName(name);
-      refreshProfileSelect();
+      renderSavedMeals();
+      $profileName.value = '';
       showToast('Saved "' + name + '"');
     }
 
-    function loadProfile() {
-      const name = $profileSelect.value;
+    function loadProfile(name) {
       if (!name) { showToast('No saved meal selected', true); return; }
       const profiles = getProfiles();
       const state = profiles[name];
@@ -563,19 +624,28 @@
       $anchorCost.value = state.anchorCost || '';
       (state.ingredients || []).forEach(i => addIngredient(i));
       setActiveProfileName(name);
-      refreshProfileSelect();
+      recalculate();
+      renderSavedMeals();
+      switchTab('calculator');
       showToast('Loaded "' + name + '"');
     }
 
-    function deleteProfile() {
-      const name = $profileSelect.value;
-      if (!name) { showToast('No saved meal selected', true); return; }
-      if (!confirm('Delete meal "' + name + '"? This cannot be undone.')) return;
+    function deleteProfile(name, btn) {
+      if (!btn._confirming) {
+        btn._confirming = true;
+        btn.innerHTML = '<i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Confirm?';
+        btn.classList.add('bg-red-500', 'text-white', 'border-red-500');
+        lucide.createIcons();
+        clearTimeout(btn._t);
+        btn._t = setTimeout(() => { renderSavedMeals(); }, 3000);
+        return;
+      }
+      clearTimeout(btn._t);
       const profiles = getProfiles();
       delete profiles[name];
       saveProfiles(profiles);
       if (getActiveProfileName() === name) setActiveProfileName('');
-      refreshProfileSelect();
+      renderSavedMeals();
       showToast('Deleted "' + name + '"');
     }
 
@@ -587,7 +657,7 @@
         el.addEventListener('input', recalculate);
       });
       loadState();
-      refreshProfileSelect();
+      switchTab('calculator');
       recalculate();
     });
   </script>
