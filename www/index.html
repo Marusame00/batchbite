@@ -80,7 +80,7 @@
         <i data-lucide="bookmark" class="w-4 h-4 text-sky-400 shrink-0"></i>
         <p class="text-sm text-slate-300 truncate">Editing <span id="activeMealName" class="font-bold text-white"></span></p>
       </div>
-      <button onclick="updateActiveProfile()" class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-900 transition">
+      <button id="updateMealBtn" onclick="updateActiveProfile()" class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-900 transition">
         <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Update Saved Meal
       </button>
     </div>
@@ -368,6 +368,7 @@
       renderIngredientRow(ing);
       updateEmptyState();
       recalculate();
+      markMealDirty();
     }
 
     function renderIngredientRow(ing) {
@@ -413,6 +414,7 @@
           partialDiv.classList.add('hidden');
         }
         recalculate();
+        markMealDirty();
       });
 
       deleteBtn.addEventListener('click', () => {
@@ -422,6 +424,7 @@
           row.remove();
           updateEmptyState();
           recalculate();
+          markMealDirty();
         });
       });
 
@@ -636,10 +639,25 @@
         document.getElementById('activeMealName').textContent = active;
         banner.classList.remove('hidden');
         banner.classList.add('flex');
+        markMealDirty();
       } else {
         banner.classList.add('hidden');
         banner.classList.remove('flex');
       }
+    }
+
+    function markMealSaved() {
+      const btn = document.getElementById('updateMealBtn');
+      if (!btn) return;
+      btn.classList.remove('bg-sky-500', 'hover:bg-sky-400');
+      btn.classList.add('bg-emerald-500', 'hover:bg-emerald-400');
+    }
+
+    function markMealDirty() {
+      const btn = document.getElementById('updateMealBtn');
+      if (!btn) return;
+      btn.classList.remove('bg-emerald-500', 'hover:bg-emerald-400');
+      btn.classList.add('bg-sky-500', 'hover:bg-sky-400');
     }
 
     function updateActiveProfile() {
@@ -649,6 +667,7 @@
       if (!profiles[name]) { showToast('Meal not found', true); return; }
       profiles[name] = captureState();
       saveProfiles(profiles);
+      markMealSaved();
       showToast('Updated "' + name + '"');
     }
 
@@ -702,6 +721,10 @@
       switchTab('calculator');
       renderActiveBanner();
       recalculate();
+      document.getElementById('pageCalculator').addEventListener('input', (e) => {
+        if (e.target.closest('#activeMealBanner')) return;
+        markMealDirty();
+      });
     });
   </script>
 </body>
