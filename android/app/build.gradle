@@ -31,3 +31,19 @@ android {
         }
     }
 }
+
+// Name the built APK "BatchBite-<version>.apk" instead of the default "app-debug.apk"
+tasks.matching { it.name == 'packageDebug' || it.name == 'packageRelease' }.configureEach { t ->
+    doLast {
+        def outDir = layout.buildDirectory.dir("outputs/apk/${t.name.replace('package','').toLowerCase()}")
+        def dir = outDir.get().asFile
+        if (dir.exists()) {
+            dir.eachFileMatch(~/.+\.apk$/) { f ->
+                def target = new File(f.parentFile, "BatchBite-${android.defaultConfig.versionName}.apk")
+                if (!f.name.startsWith('BatchBite-')) {
+                    f.renameTo(target)
+                }
+            }
+        }
+    }
+}
