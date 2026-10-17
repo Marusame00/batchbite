@@ -32,18 +32,19 @@ android {
     }
 }
 
-// Name the built APK "BatchBite-<version>.apk" instead of the default "app-debug.apk"
-tasks.matching { it.name == 'packageDebug' || it.name == 'packageRelease' }.configureEach { t ->
-    doLast {
-        def outDir = layout.buildDirectory.dir("outputs/apk/${t.name.replace('package','').toLowerCase()}")
-        def dir = outDir.get().asFile
-        if (dir.exists()) {
-            dir.eachFileMatch(~/.+\.apk$/) { f ->
-                def target = new File(f.parentFile, "BatchBite-${android.defaultConfig.versionName}.apk")
-                if (!f.name.startsWith('BatchBite-')) {
-                    f.renameTo(target)
-                }
-            }
-        }
-    }
+// Publish a pretty-named copy of the APK. This is a COPY, never a move: AGP's
+// incremental packager tracks "app-debug.apk" as packageDebug's output, and if
+// that file goes missing between builds (which the old doLast-rename did), the
+// next asset-only incremental build re-zips ONLY the changed entry -> a corrupt
+// APK (e.g. just assets/index.html) that fails to install. Fixed 2026-10-17.
+tasks.register("renameDebugApk", Copy) {
+    dependsOn ":app:packageDebug"
+    from(layout.buildDirectory.dir("outputs/apk/debug/app-debug.apk"))
+    into(layout.projectDirectory.dir("dist"))
+    rename("app-debug.apk", "BatchBite-${android.defaultConfig.versionName}.apk")
+}
+
+// Produce the pretty-named copy with a plain `assembleDebug` build.
+afterEvaluate {
+    tasks.named("assembleDebug").configure { it.finalizedBy(tasks.named("renameDebugApk")) }
 }

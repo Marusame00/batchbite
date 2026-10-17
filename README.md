@@ -54,7 +54,7 @@ cd batchbite\android
 .\gradlew.bat :app:assembleDebug
 ```
 
-The APK is named after the version (e.g. `BatchBite-1.2.apk`) inside `app\build\outputs\apk\debug\`.
+The APK is named after the version (e.g. `BatchBite-1.2.apk`) and lands in `app\dist\` (AGP's stock `app-debug.apk` stays in `app\build\outputs\apk\debug\`).
 
 Or just open the `android` folder in **Android Studio** and press **Run** — it builds, installs, and launches on whatever device or emulator is attached.
 
