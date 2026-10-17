@@ -74,6 +74,17 @@
 
   <main id="pageCalculator" class="max-w-5xl mx-auto px-4 pt-6 pb-44">
 
+    <!-- ============ ACTIVE MEAL BANNER ============ -->
+    <div id="activeMealBanner" class="hidden items-center justify-between gap-3 bg-sky-500/10 border border-sky-500/30 rounded-xl px-4 py-2.5 mb-6">
+      <div class="flex items-center gap-2 min-w-0">
+        <i data-lucide="bookmark" class="w-4 h-4 text-sky-400 shrink-0"></i>
+        <p class="text-sm text-slate-300 truncate">Editing <span id="activeMealName" class="font-bold text-white"></span></p>
+      </div>
+      <button onclick="updateActiveProfile()" class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-900 transition">
+        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Update Saved Meal
+      </button>
+    </div>
+
     <!-- ============ BATCH ANCHOR CARD ============ -->
     <section class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 mb-6 fade-in">
       <div class="flex items-center gap-2 mb-4">
@@ -436,6 +447,8 @@
       addIngredient({ name: 'Burger Sauce', price: '2.50', mode: 'partial', pkgUnits: '20', usedUnits: '6' });
       addIngredient({ name: 'Lettuce / Tomato', price: '2.00', mode: 'whole' });
 
+      setActiveProfileName('');
+      renderActiveBanner();
       recalculate();
     }
 
@@ -446,6 +459,8 @@
       $totalServings.value = '6';
       $anchorName.value = '';
       $anchorCost.value = '';
+      setActiveProfileName('');
+      renderActiveBanner();
       recalculate();
     }
 
@@ -608,8 +623,33 @@
       saveProfiles(profiles);
       setActiveProfileName(name);
       renderSavedMeals();
+      renderActiveBanner();
       $profileName.value = '';
       showToast('Saved "' + name + '"');
+    }
+
+    function renderActiveBanner() {
+      const banner = document.getElementById('activeMealBanner');
+      const active = getActiveProfileName();
+      const profiles = getProfiles();
+      if (active && profiles[active]) {
+        document.getElementById('activeMealName').textContent = active;
+        banner.classList.remove('hidden');
+        banner.classList.add('flex');
+      } else {
+        banner.classList.add('hidden');
+        banner.classList.remove('flex');
+      }
+    }
+
+    function updateActiveProfile() {
+      const name = getActiveProfileName();
+      if (!name) { showToast('No saved meal is active', true); return; }
+      const profiles = getProfiles();
+      if (!profiles[name]) { showToast('Meal not found', true); return; }
+      profiles[name] = captureState();
+      saveProfiles(profiles);
+      showToast('Updated "' + name + '"');
     }
 
     function loadProfile(name) {
@@ -626,6 +666,7 @@
       setActiveProfileName(name);
       recalculate();
       renderSavedMeals();
+      renderActiveBanner();
       switchTab('calculator');
       showToast('Loaded "' + name + '"');
     }
@@ -646,6 +687,7 @@
       saveProfiles(profiles);
       if (getActiveProfileName() === name) setActiveProfileName('');
       renderSavedMeals();
+      renderActiveBanner();
       showToast('Deleted "' + name + '"');
     }
 
@@ -658,6 +700,7 @@
       });
       loadState();
       switchTab('calculator');
+      renderActiveBanner();
       recalculate();
     });
   </script>
