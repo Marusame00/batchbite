@@ -35,6 +35,8 @@
       font-size: 12px; white-space: nowrap; pointer-events: none; z-index: 50; opacity: 0; transition: opacity 0.15s; }
     .bar-segment:hover .tooltip-pop { opacity: 1; }
     .kpi-value { transition: color 0.2s; }
+    .toast-hidden { opacity: 0; transform: translate(-50%, 8px); transition: opacity 0.25s, transform 0.25s; }
+    .toast-visible { opacity: 1; transform: translate(-50%, 0); transition: opacity 0.25s, transform 0.25s; }
   </style>
 </head>
 <body class="min-h-screen font-sans antialiased">
@@ -89,6 +91,38 @@
       </div>
     </section>
 
+    <!-- ============ SAVED MEALS (PROFILES) ============ -->
+    <section class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 mb-6 fade-in">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="w-7 h-7 rounded-lg bg-sky-500/20 flex items-center justify-center">
+          <i data-lucide="bookmark" class="w-4 h-4 text-sky-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-white">Saved Meals</h2>
+        <span class="text-xs text-slate-500 ml-1">(profiles)</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1" for="profileName">Meal name</label>
+          <input id="profileName" type="text" placeholder="e.g. Taco Tuesday" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 transition" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1" for="profileSelect">Saved meals</label>
+          <select id="profileSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 transition appearance-none cursor-pointer"></select>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="saveProfile()" class="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-900 transition shadow-lg shadow-sky-500/20">
+            <i data-lucide="save" class="w-4 h-4"></i> Save
+          </button>
+          <button onclick="loadProfile()" class="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl bg-slate-700 hover:bg-slate-600 text-white transition">
+            <i data-lucide="folder-open" class="w-4 h-4"></i> Load
+          </button>
+          <button onclick="deleteProfile()" class="p-2 rounded-xl text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition" title="Delete selected meal">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- ============ ADD-ON INGREDIENTS ============ -->
     <section class="mb-6">
       <div class="flex items-center justify-between mb-4">
@@ -109,6 +143,8 @@
       </div>
     </section>
   </main>
+
+  <div id="toast" class="toast-hidden fixed left-1/2 -translate-x-1/2 bottom-24 z-[60] px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-xl pointer-events-none"></div>
 
   <!-- ============ KPI DASHBOARD (sticky bottom) ============ -->
   <footer id="kpiBar" class="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 shadow-2xl">
@@ -413,8 +449,11 @@
     }
 
     /* ===== LOCAL STORAGE ===== */
-    function saveState() {
-      const state = {
+    const STORAGE_KEY_PROFILES = 'batchbite_profiles';
+    const STORAGE_KEY_ACTIVE = 'batchbite_active_profile';
+
+    function captureState() {
+      return {
         batchName: $batchName.value,
         totalServings: $totalServings.value,
         anchorName: $anchorName.value,
@@ -424,7 +463,10 @@
           pkgUnits: i.pkgUnits, usedUnits: i.usedUnits,
         })),
       };
-      try { localStorage.setItem('batchbite_state', JSON.stringify(state)); } catch(e) {}
+    }
+
+    function saveState() {
+      try { localStorage.setItem('batchbite_state', JSON.stringify(captureState())); } catch(e) {}
     }
 
     function loadState() {
@@ -440,6 +482,103 @@
       } catch(e) {}
     }
 
+    /* ===== PROFILES (named saved meals) ===== */
+    function getProfiles() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_PROFILES);
+        const parsed = raw ? JSON.parse(raw) : {};
+        return (parsed && typeof parsed === 'object') ? parsed : {};
+      } catch(e) { return {}; }
+    }
+
+    function saveProfiles(profiles) {
+      try { localStorage.setItem(STORAGE_KEY_PROFILES, JSON.stringify(profiles)); } catch(e) {}
+    }
+
+    function getActiveProfileName() {
+      try { return localStorage.getItem(STORAGE_KEY_ACTIVE) || ''; } catch(e) { return ''; }
+    }
+
+    function setActiveProfileName(name) {
+      try {
+        if (name) localStorage.setItem(STORAGE_KEY_ACTIVE, name);
+        else localStorage.removeItem(STORAGE_KEY_ACTIVE);
+      } catch(e) {}
+    }
+
+    const $profileName = document.getElementById('profileName');
+    const $profileSelect = document.getElementById('profileSelect');
+
+    function refreshProfileSelect() {
+      const profiles = getProfiles();
+      const names = Object.keys(profiles).sort();
+      const active = getActiveProfileName();
+      if ($profileSelect) {
+        $profileSelect.innerHTML = '';
+        if (names.length) {
+          names.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name; opt.textContent = name;
+            $profileSelect.appendChild(opt);
+          });
+        } else {
+          const opt = document.createElement('option');
+          opt.value = ''; opt.textContent = '— No saved meals —';
+          $profileSelect.appendChild(opt);
+        }
+        $profileSelect.value = names.includes(active) ? active : (names[0] || '');
+      }
+    }
+
+    function showToast(msg, isError) {
+      const toast = document.getElementById('toast');
+      if (!toast) return;
+      toast.textContent = msg;
+      toast.className = 'toast-visible ' + (isError ? 'bg-red-500/90' : 'bg-emerald-500/90');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => { toast.className = 'toast-hidden'; }, 2200);
+    }
+
+    function saveProfile() {
+      const name = ($profileName.value || '').trim();
+      if (!name) { showToast('Give the meal a name first', true); return; }
+      const profiles = getProfiles();
+      profiles[name] = captureState();
+      saveProfiles(profiles);
+      setActiveProfileName(name);
+      refreshProfileSelect();
+      showToast('Saved "' + name + '"');
+    }
+
+    function loadProfile() {
+      const name = $profileSelect.value;
+      if (!name) { showToast('No saved meal selected', true); return; }
+      const profiles = getProfiles();
+      const state = profiles[name];
+      if (!state) { showToast('Meal not found', true); return; }
+      clearState();
+      $batchName.value = state.batchName || '';
+      $totalServings.value = state.totalServings || '6';
+      $anchorName.value = state.anchorName || '';
+      $anchorCost.value = state.anchorCost || '';
+      (state.ingredients || []).forEach(i => addIngredient(i));
+      setActiveProfileName(name);
+      refreshProfileSelect();
+      showToast('Loaded "' + name + '"');
+    }
+
+    function deleteProfile() {
+      const name = $profileSelect.value;
+      if (!name) { showToast('No saved meal selected', true); return; }
+      if (!confirm('Delete meal "' + name + '"? This cannot be undone.')) return;
+      const profiles = getProfiles();
+      delete profiles[name];
+      saveProfiles(profiles);
+      if (getActiveProfileName() === name) setActiveProfileName('');
+      refreshProfileSelect();
+      showToast('Deleted "' + name + '"');
+    }
+
     /* ===== INIT ===== */
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
@@ -448,6 +587,7 @@
         el.addEventListener('input', recalculate);
       });
       loadState();
+      refreshProfileSelect();
       recalculate();
     });
   </script>
