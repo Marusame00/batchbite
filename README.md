@@ -1,53 +1,50 @@
-# 🍔 BatchBite
+# BatchBite
 
-**A per-meal batch budget calculator.** Find out what each serving of a home-cooked batch really costs.
+Per-meal batch budget calculator: enter what a batch costs and how many servings it makes, and BatchBite tells you the cost per serving — plus a pantry surplus breakdown for partially-used ingredients.
 
-**▶ Live demo:** https://marusame00.github.io/batchbite/
+## Layout
 
-When you shop, one "anchor" item usually sets the batch size, like a 6-pack of burger patties. BatchBite takes every other ingredient (buns, cheese, sauce, toppings), splits its cost across that batch, and gives you an accurate **cost per serving** and **total batch cost**. It also tracks the value of the leftovers that go back into your pantry.
+| Path | What it is |
+| --- | --- |
+| `index.html` | Original browser version (CDN dependencies) |
+| `www/` | Offline bundle used by the Android app (Tailwind, Lucide, fonts vendored locally) |
+| `android/` | Native Android project that packages `www/` into an APK |
 
-## ✨ Features
+## Android app
 
-- **Batch anchor:** set a batch name, the number of servings, and the anchor item's name and cost. The anchor's full cost goes to the batch.
-- **Add-on ingredients:** add as many items as you need. Each one has two ways to count its cost:
-  - **Whole Package:** the batch takes 100% of the package cost.
-  - **Partial Use:** the batch takes only the share it uses (for example, 6 of 12 cheese slices = 50% of the cost).
-- **Live KPI dashboard:**
-  - Cost Per Serving
-  - Total Batch Cost
-  - Pantry Surplus Value (money spent on groceries that weren't used up in this batch)
-- **Cost breakdown bar:** a color-coded stacked bar that shows each ingredient's share of the total.
-- **Auto-save:** your current batch is saved in your browser's `localStorage`.
-- **Quick actions:** a one-click **Load Burger Example** preset and a **Reset** button.
-- **Dark mode UI:** slate palette with emerald accents. Works on desktop and mobile.
+The app is a WebView that loads `www/index.html` from the APK — everything else (Tailwind, icons, fonts) is bundled, so it works fully offline.rand
 
-## 🚀 Getting Started
+### Build
 
-There's nothing to install or build. It's one HTML file.
+Open the `android/` folder in Android Studio and press Run, or from a terminal:
 
-```bash
-git clone https://github.com/Marusame00/batchbite.git
-cd batchbite
-open index.html   # or just double-click it
+```
+cd android
+.\gradlew.bat :app:assembleDebug
 ```
 
-## 🧮 How the Math Works
+### Run it
 
-| Value | Formula |
-|---|---|
-| Attributed cost (Whole Package) | `package price` |
-| Attributed cost (Partial Use) | `package price × (units used ÷ units in package)` |
-| Total Batch Cost | `anchor cost + Σ attributed costs` |
-| Cost Per Serving | `Total Batch Cost ÷ servings` |
-| Pantry Surplus Value | `Σ (package price − attributed cost)` |
+**On a real phone (easiest):** enable Developer Options > USB debugging, plug in the phone, then:
 
-## 🛠️ Tech Stack
+```
+adb install -r app\build\outputs\apk\debug\app-debug.apk
+```
 
-- HTML5 + vanilla JavaScript
-- [Tailwind CSS](https://tailwindcss.com/) (CDN)
-- [Lucide Icons](https://lucide.dev/) (CDN)
-- Google Fonts: Inter & JetBrains Mono
+Or copy the APK to the phone and tap it (allow "install unknown apps").
 
-## 📄 License
+**On the emulator:** the emulator needs hardware virtualization enabled — either in the BIOS/UEFI firmware (Intel VT-x / AMD SVM), plus the "Windows Hypervisor Platform" Windows feature or the Android Emulator Hypervisor Driver (installable from Android Studio's SDK Manager). Without it the emulator will not boot. Once enabled, run the AVD from Android Studio or:
 
-[MIT](LICENSE). Use it, fork it, and cook on a budget.
+```
+emulator -avd <your-avd-name>
+```
+
+### Update the app after editing the CSS/JS
+
+Edit `www/index.html` (this single file is what gets packaged) and rebuild — the Gradle build copies `www/` into the app automatically.
+
+### Release builds
+
+`android/app/build/outputs/apk/release/app-release-unsigned.apk` is unsigned; to put BatchBite on the Play Store, generate a signing key in Android Studio (Build > Generate Signed App Bundle / APK).
+
+Requires: Android SDK, Java / Android Studio. The launcher icon is an adaptive icon (minSdk 26).
