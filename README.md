@@ -13,7 +13,9 @@ Built by [Marusame00](https://github.com/Marusame00) with AI assistance from [Ab
 - **Pantry surplus** — partially-used ingredients report what's left and what it's worth
 - **Batch & servings controls** — quick steppers, plus anchor-ingredient logic
 - **Load Example / Reset** — one tap to see it in action ("Burger Night")
-- **100% offline** — styles, icons, and fonts are bundled; no network calls
+- **Saved Meals** — its own tab, separate from the Calculator. Save a recipe by name, see cost per serving / batch total / ingredient count on each card, and load or delete with one tap (delete needs a quick second tap to confirm)
+- **Update Saved Meal** — once a meal is loaded or just saved, a button appears on the Calculator tab to overwrite that same profile in place instead of saving a duplicate under a new name. It flashes green to confirm the save, then goes back to blue as soon as you change anything
+- **100% offline** — styles, icons, and fonts are bundled; no network calls, everything (recipes included) stored on-device
 - **Native Android app** — edge-to-edge aware (status bar, camera cutout, gesture navigation), adaptive launcher icon
 
 ## 📂 Project layout
@@ -30,8 +32,8 @@ The Android app is a WebView that loads `www/index.html` straight from the APK's
 
 The easiest way — no build tools required:
 
-1. On your phone, open: **github.com/Marusame00/batchbite → Releases → latest** (or download the APK directly from the `app-debug.apk` asset on the release page)
-2. Tap the downloaded `app-debug.apk`
+1. On your phone, open: **github.com/Marusame00/batchbite → Releases → latest** and download the `BatchBite-<version>.apk` asset
+2. Tap the downloaded APK
 3. If prompted, allow installing from your browser ("Allow from this source")
 4. Tap **Install anyway** when Android warns about an unknown source — it is a debug-signed build, which is expected
 5. Open **BatchBite** from your app drawer
@@ -39,7 +41,7 @@ The easiest way — no build tools required:
 > Prefer USB? Install with ADB instead: enable **Settings → Developer options → USB debugging**, connect the phone, then from a PC with the Android platform-tools:
 >
 > ```powershell
-> adb install -r app-debug.apk
+> adb install -r BatchBite-<version>.apk
 > ```
 >
 > Use a cable that supports data (charge-only cables are the usual reason a phone never shows up in `adb devices`).
