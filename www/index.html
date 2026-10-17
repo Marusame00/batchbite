@@ -592,10 +592,8 @@
           const isActive = name === active;
           return '<div class="flex items-center justify-between gap-3 bg-slate-900/60 border border-slate-700/60 rounded-xl px-4 py-3">'
             + '<div class="min-w-0">'
-            + '<div class="flex items-center gap-2">'
-            + '<p class="font-bold text-white truncate">' + escapeHtml(name) + '</p>'
-            + (isActive ? '<span class="text-[10px] font-semibold uppercase tracking-wide text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2 py-0.5">Active</span>' : '')
-            + '</div>'
+            + (isActive ? '<span class="inline-block mb-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2 py-0.5">Active</span>' : '')
+            + '<p class="font-bold text-white break-words">' + escapeHtml(name) + '</p>'
             + '<p class="text-xs text-slate-400 mt-0.5">≈ $' + meta.perServing.toFixed(2) + ' per serving · $' + meta.total.toFixed(2) + ' batch · ' + meta.ingCount + ' ingredient' + (meta.ingCount === 1 ? '' : 's') + '</p>'
             + '</div>'
             + '<div class="flex items-center gap-2 shrink-0">'
